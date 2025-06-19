@@ -1,0 +1,126 @@
+import 'dart:convert';
+import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:async';
+
+// Global list for available cameras.
+List<CameraDescription> cameras = [];
+
+class DetectionScreen extends StatefulWidget {
+  @override
+  _DetectionScreenState createState() => _DetectionScreenState();
+}
+
+class _DetectionScreenState extends State<DetectionScreen> {
+  CameraController? _controller;
+  bool _isInitialized = false;
+  bool _isRecording = false;
+  String _result =
+      "Press the button to record 10 seconds and analyze your arm movement.";
+
+  @override
+  void initState() {
+    super.initState();
+    initializeCamera();
+  }
+
+  Future<void> initializeCamera() async {
+    // Get available cameras.
+    cameras = await availableCameras();
+    _controller = CameraController(cameras[0], ResolutionPreset.medium);
+    await _controller!.initialize();
+    setState(() {
+      _isInitialized = true;
+    });
+  }
+
+  Future<void> recordAndDetect() async {
+    if (!_controller!.value.isInitialized) return;
+    try {
+      setState(() {
+        _result = "Recording for 10 seconds...";
+        _isRecording = true;
+      });
+      // Start video recording.
+      await _controller!.startVideoRecording();
+      // Record for 10 seconds.
+      await Future.delayed(Duration(seconds: 10));
+      // Stop recording.
+      XFile videoFile = await _controller!.stopVideoRecording();
+      setState(() {
+        _isRecording = false;
+        _result = "Uploading and analyzing video...";
+      });
+
+      // Prepare a multipart POST request to send the video.
+      var uri = Uri.parse("http://192.168.1.102:5001/detect"); // Replace with your server's address.
+      var request = http.MultipartRequest("POST", uri);
+      request.files.add(await http.MultipartFile.fromPath("file", videoFile.path));
+
+      // Send the request.
+      var response = await request.send();
+      if (response.statusCode == 200) {
+        String resStr = await response.stream.bytesToString();
+        var data = json.decode(resStr);
+        setState(() {
+          _result = "Status: ${data['status']}\n"
+              "Average Left Angle: ${data['avg_left_angle']}\n"
+              "Average Right Angle: ${data['avg_right_angle']}\n"
+              "Left Weakness: ${data['left_weakness']}\n"
+              "Right Weakness: ${data['right_weakness']}";
+        });
+      } else {
+        setState(() {
+          _result = "Error: Server responded with status ${response.statusCode}";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _result = "Error: $e";
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Arm Weakness Detection"),
+      ),
+      body: Column(
+        children: [
+          _isInitialized
+              ? AspectRatio(
+            aspectRatio: _controller!.value.aspectRatio,
+            child: CameraPreview(_controller!),
+          )
+              : Container(
+            height: 200,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Text(
+              _result,
+              style: TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _isRecording ? null : recordAndDetect,
+            child: Text("Record & Detect Arm Weakness"),
+          ),
+        ],
+      ),
+    );
+  }
+}
