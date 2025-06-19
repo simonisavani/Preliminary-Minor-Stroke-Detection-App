@@ -1,0 +1,14 @@
+flutter_native_splash:
+  color: "#F5F5F5" # Smoky white background color
+  image: assets/logos/splash.png
+
+  android_12:
+    color: "#F5F5F5" # Smoky white for Android 12
+    image: assets/logos/splash.png
+
+  web: false
+  android: true
+  ios: true
+  android_gravity: center # Adjust logo position
+  ios_content_mode: scaleAspectFit # Maintains aspect ratio
+  web_image_mode: center
