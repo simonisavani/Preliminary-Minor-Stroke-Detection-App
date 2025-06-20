@@ -55,7 +55,7 @@ cd Preliminary-Minor-Stroke-Detection-App
 
 ---
 
-## 📱 App Screens 
+## App Screens 
 
 * [ ] Facial Test Screen
 
@@ -76,7 +76,7 @@ cd Preliminary-Minor-Stroke-Detection-App
 ![image](https://github.com/user-attachments/assets/f259dc32-ca67-4086-91c2-2aac0593509a)
 ---
 
-## 📦 Tech Stack
+## Tech Stack
 
 * **Language**: Kotlin / Java
 * **ML Framework**: TensorFlow Lite / ML Kit
@@ -86,7 +86,7 @@ cd Preliminary-Minor-Stroke-Detection-App
 
 ---
 
-## 🔒 Privacy
+## Privacy
 
 * All detection is **on-device**
 * No personally identifiable data is stored or transmitted
